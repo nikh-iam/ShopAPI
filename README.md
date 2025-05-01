@@ -250,4 +250,4 @@ MIT License. Use freely with attribution.
 
 ## Contributors
 
-- [Nikhil A Mathew](https://github.com/NikhilAMathew)
+- [Nikhil A Mathew](https://github.com/nikh-iam)
