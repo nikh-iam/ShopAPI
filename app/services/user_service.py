@@ -1,3 +1,4 @@
+from app.models.order import Order
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from typing import Optional, List
@@ -16,6 +17,9 @@ def get_user_by_id(db: Session, user_id: int) -> Optional[User]:
 
 def get_users(db: Session, skip: int = 0, limit: int = 100) -> List[User]:
     return db.query(User).offset(skip).limit(limit).all()
+
+def get_orders(db: Session, skip: int = 0, limit: int = 100) -> List[Order]:
+    return db.query(Order).offset(skip).limit(limit).all()
 
 def create_user(db: Session, user: UserCreate) -> User:
     # Check if user already exists

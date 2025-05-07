@@ -1,3 +1,4 @@
+from app.schemas.order_schema import OrderOut
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -12,6 +13,7 @@ from app.schemas.user_schema import (
     Token
 )
 from app.services.user_service import (
+    get_orders,
     get_user_by_email,
     create_user,
     authenticate_user,
@@ -98,6 +100,15 @@ def read_users(
     current_user: User = Depends(get_current_admin_user)
 ):
     return get_users(db, skip=skip, limit=limit)
+
+@router.get("/orders", response_model=List[OrderOut])
+def read_orders(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin_user)
+):
+    return get_orders(db, skip=skip, limit=limit)
 
 @router.put("/{user_id}", response_model=UserOut)
 def update_user_admin(

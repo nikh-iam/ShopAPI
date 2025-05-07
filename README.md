@@ -20,7 +20,7 @@ A complete E-Commerce backend built with **FastAPI**, supporting user authentica
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/ShopAPI.git
+git clone https://github.com/nikh-iam/ShopAPI.git
 cd ShopAPI
 ```
 
