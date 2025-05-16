@@ -218,7 +218,6 @@ You can set in .env file.
 ## Future Enhancements
 
 #### API's
-- Product Reviews & Ratings  
 - Wishlist API  
 - Recommendations & Personalization  
 
