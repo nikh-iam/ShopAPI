@@ -13,12 +13,10 @@ def create_order(db: Session, user_id: int, order: OrderBase) -> Order:
     cart = db.query(Cart).filter(Cart.user_id == user_id).first()
     if not cart or not cart.items:
         raise HTTPException(status_code=400, detail="Cart is empty")
-    
-    # Calculate total amount
+
     total_amount = 0
     order_items = []
     
-    # Check product availability and calculate total
     for item in cart.items:
         product = db.query(Product).filter(Product.id == item.product_id).first()
         if not product:
@@ -37,7 +35,6 @@ def create_order(db: Session, user_id: int, order: OrderBase) -> Order:
             price=product.price
         ))
     
-    # Create order
     db_order = Order(
         user_id=user_id,
         shipping_address=order.shipping_address,
@@ -51,7 +48,6 @@ def create_order(db: Session, user_id: int, order: OrderBase) -> Order:
         product = db.query(Product).filter(Product.id == item.product_id).first()
         product.stock -= item.quantity
     
-    # Clear cart
     cart.items = []
     
     db.add(db_order)
@@ -69,13 +65,13 @@ def update_order_status(db: Session, order_id: int, status: str) -> Optional[Ord
     db_order = db.query(Order).filter(Order.id == order_id).first()
     if not db_order:
         return None
-    
-    if db_order.status in ["cancelled"]:
+
+    if db_order.status == "cancelled":
         raise HTTPException(
             status_code=400,
-            detail="Order cannot be updated as it is cancelled"
+            detail="Order is cancelled and cannot be updated"
         )
-    
+
     db_order.status = status
     db.commit()
     db.refresh(db_order)
@@ -92,7 +88,6 @@ def cancel_order(db: Session, order_id: int, user_id: int) -> bool:
             detail="Order cannot be cancelled as it's already shipped or delivered"
         )
     
-    # Restore product stocks
     for item in db_order.items:
         product = db.query(Product).filter(Product.id == item.product_id).first()
         if product:
@@ -100,4 +95,4 @@ def cancel_order(db: Session, order_id: int, user_id: int) -> bool:
     
     db_order.status = "cancelled"
     db.commit()
-    return True
+    return db_order

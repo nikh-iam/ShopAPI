@@ -2,6 +2,8 @@ from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
 
+from app.schemas.review_schema import ReviewOut
+
 class ProductBase(BaseModel):
     title: str = Field(..., max_length=100)
     description: Optional[str] = Field(None, max_length=500)
@@ -23,6 +25,9 @@ class ProductUpdate(BaseModel):
 
 class ProductOut(ProductBase):
     id: int
+    reviews: Optional[List[ReviewOut]] = []
+    average_rating: Optional[float] = 0.0
+    review_count: Optional[int] = 0
     
     class Config:
         orm_mode = True

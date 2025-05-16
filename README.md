@@ -71,6 +71,12 @@ SMTP_PASSWORD=your_email_app_passcode
 uvicorn app:app --reload
 ```
 
+## Run Tests
+
+```bash
+pytest tests/
+```
+
 Visit: **http://localhost:8000**
 
 - Swagger: `http://localhost:8000/docs`

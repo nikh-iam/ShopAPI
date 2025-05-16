@@ -1,9 +1,10 @@
-from app.models.order import Order
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException, status
 from typing import Optional, List
 from datetime import datetime, timedelta
 
+from app.models.order import Order, OrderItem
+from app.models.review import Review
 from app.models.user import User
 from app.schemas.user_schema import UserCreate, UserUpdate
 from app.core.security import get_password_hash, verify_password
@@ -13,16 +14,30 @@ def get_user_by_email(db: Session, email: str) -> Optional[User]:
     return db.query(User).filter(User.email == email).first()
 
 def get_user_by_id(db: Session, user_id: int) -> Optional[User]:
-    return db.query(User).filter(User.id == user_id).first()
+    db_user = db.query(User).filter(User.id == user_id).first()
+    if not db_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    return db_user
 
 def get_users(db: Session, skip: int = 0, limit: int = 100) -> List[User]:
     return db.query(User).offset(skip).limit(limit).all()
 
-def get_orders(db: Session, skip: int = 0, limit: int = 100) -> List[Order]:
-    return db.query(Order).offset(skip).limit(limit).all()
+def get_orders(db: Session, skip: int = 0, limit: int = 100):
+    return (
+        db.query(Order)
+        .options(
+            joinedload(Order.items).joinedload(OrderItem.product),
+            joinedload(Order.user),
+        )
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
 
 def create_user(db: Session, user: UserCreate) -> User:
-    # Check if user already exists
     db_user = get_user_by_email(db, email=user.email)
     if db_user:
         raise HTTPException(
@@ -30,10 +45,8 @@ def create_user(db: Session, user: UserCreate) -> User:
             detail="Email already registered"
         )
     
-    # Hash password
     hashed_password = get_password_hash(user.password)
-    
-    # Create user
+
     db_user = User(
         first_name=user.first_name,
         last_name=user.last_name,
@@ -48,7 +61,6 @@ def create_user(db: Session, user: UserCreate) -> User:
     db.commit()
     db.refresh(db_user)
 
-    
     return db_user
 
 def authenticate_user(db: Session, email: str, password: str) -> Optional[User]:
@@ -65,7 +77,6 @@ def update_user(
     user_update: UserUpdate,
     current_user: User
 ) -> User:
-    # Only allow users to update their own profile unless they're admin
     if user_id != current_user.id and not current_user.is_admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -79,8 +90,7 @@ def update_user(
             detail="User not found"
         )
     
-    # Update user fields
-    update_data = user_update.dict(exclude_unset=True)
+    update_data = user_update.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(db_user, field, value)
     
@@ -89,11 +99,10 @@ def update_user(
     return db_user
 
 def delete_user(db: Session, user_id: int, current_user: User) -> bool:
-    # Prevent users from deleting themselves unless they're admin
-    if user_id == current_user.id and not current_user.is_admin:
+    if user_id != current_user.id and not current_user.is_admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="You cannot delete your own account"
+            detail="Not authorized to delete this user"
         )
     
     db_user = get_user_by_id(db, user_id=user_id)
@@ -107,53 +116,29 @@ def delete_user(db: Session, user_id: int, current_user: User) -> bool:
     db.commit()
     return True
 
-# def get_user_addresses(db: Session, user_id: int) -> List[Address]:
-#     return db.query(Address).filter(Address.user_id == user_id).all()
+def get_user_orders(db: Session, user_id: int, skip: int = 0, limit: int = 100) -> List[Order]:
+    user = db.query(User).filter(User.id == user_id).offset(skip).limit(limit).all()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
 
-# def get_address_by_id(db: Session, address_id: int, user_id: int) -> Optional[Address]:
-#     return db.query(Address).filter(
-#         Address.id == address_id, Address.user_id == user_id
-#     ).first()
+    orders = (
+        db.query(Order)
+        .join(Order.items)
+        .join(OrderItem.product)
+        .filter(Order.user_id == user_id)
+        .all()
+    )
+    return orders
 
-# def create_address(db: Session, user_id: int, address_create: AddressCreate) -> Address:
-#     if address_create.is_default:
-#         db.query(Address).filter(
-#             Address.user_id == user_id, Address.is_default == True
-#         ).update({"is_default": False})
-    
-#     db_address = Address(
-#         **address_create.dict(),
-#         user_id=user_id,
-#     )
-#     db.add(db_address)
-#     db.commit()
-#     db.refresh(db_address)
-#     return db_address
+def get_user_reviews(db: Session, user_id: int, skip: int = 0, limit: int = 100) -> List[Review]:
+    user = db.query(User).filter(User.id == user_id).offset(skip).limit(limit).all()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
 
-# def update_address(db: Session, address_id: int, user_id: int, address_update: AddressUpdate) -> Address:
-#     db_address = get_address_by_id(db, address_id, user_id)
-#     if not db_address:
-#         raise HTTPException(status_code=404, detail="Address not found")
-
-#     update_data = address_update.dict(exclude_unset=True)
-
-#     if "is_default" in update_data and update_data["is_default"]:
-#         db.query(Address).filter(
-#             Address.user_id == user_id, Address.is_default == True
-#         ).update({"is_default": False})
-    
-#     for field, value in update_data.items():
-#         setattr(db_address, field, value)
-    
-#     db.commit()
-#     db.refresh(db_address)
-#     return db_address
-
-# def delete_address(db: Session, address_id: int, user_id: int) -> bool:
-#     db_address = get_address_by_id(db, address_id, user_id)
-#     if not db_address:
-#         raise HTTPException(status_code=404, detail="Address not found")
-    
-#     db.delete(db_address)
-#     db.commit()
-#     return True
+    reviews = (
+        db.query(Review)
+        .join(Review.product)
+        .filter(Review.user_id == user_id)
+        .all()
+    )
+    return reviews

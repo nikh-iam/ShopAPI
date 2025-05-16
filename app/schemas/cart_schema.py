@@ -11,7 +11,7 @@ class CartItemCreate(CartItemBase):
 
 class CartItemOut(CartItemBase):
     id: int
-    product: ProductOut
+    product: dict
     
     class Config:
         orm_mode = True

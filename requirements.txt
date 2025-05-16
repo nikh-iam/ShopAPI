@@ -7,4 +7,4 @@ passlib[bcrypt]
 SQLAlchemy
 pydantic-settings
 alembic
-reportlab
+pytest
