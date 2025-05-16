@@ -18,5 +18,12 @@ class CategoryOut(CategoryBase):
     class Config:
         orm_mode = True
 
+class AdminCategoryOut(CategoryBase):
+    id: int
+    product_count: int
+    
+    class Config:
+        orm_mode = True
+
 class CategoryWithProducts(CategoryOut):
     products: List['ProductOut'] = []

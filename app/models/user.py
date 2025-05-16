@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Boolean, JSON
+from datetime import datetime
+from sqlalchemy import Column, DateTime, Integer, String, Boolean, JSON
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 
@@ -14,20 +15,10 @@ class User(Base):
     hashed_password = Column(String(255), nullable=False)
     is_active = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
     orders = relationship("Order", back_populates="user")
     cart = relationship("Cart", back_populates="user", uselist=False)
-    # addresses = relationship("Address", back_populates="user", cascade="all, delete-orphan")
-
-
-# class Address(Base):
-#     __tablename__ = "addresses"
-
-#     id = Column(Integer, primary_key=True, index=True)
-#     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-#     address = Column(String, nullable=False)
-#     is_default = Column(Boolean, default=False)
-
-#     # Relationships
-#     user = relationship("User", back_populates="addresses")
+    reviews = relationship("Review", back_populates="user", cascade="all, delete")
+    

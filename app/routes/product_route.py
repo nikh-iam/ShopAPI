@@ -70,7 +70,24 @@ def delete_product_route(
 
 @router.get("/search/", response_model=List[ProductOut])
 def search_products_route(
-    query: str = Query(..., min_length=1),
+    query: Optional[str] = Query(None, min_length=1, alias="search"),  
+    min_price: Optional[float] = Query(None),
+    max_price: Optional[float] = Query(None),
+    min_rating: Optional[float] = Query(None, ge=0.0, le=5.0),
+    category_id: Optional[int] = Query(None),
+    skip: int = 0,
+    limit: int = 100,
     db: Session = Depends(get_db)
 ):
-    return search_products(db=db, query=query)
+    return search_products(
+        db=db,
+        query=query,
+        min_price=min_price,
+        max_price=max_price,
+        min_rating=min_rating,
+        category_id=category_id,
+        skip=skip,
+        limit=limit
+    )
+
+    

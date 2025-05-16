@@ -1,22 +1,19 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
-from typing import List, Optional
+from typing import List, Optional, Any, Dict
 
 from app.models.cart import Cart, CartItem
 from app.models.product import Product
 from app.models.user import User
 from app.schemas.cart_schema import CartItemCreate
 
-def calculate_cart_totals(cart: Cart) -> dict:
-    """Helper function to calculate cart totals"""
-    total_items = sum(item.quantity for item in cart.items)
-    total_price = sum(item.quantity * item.product.price for item in cart.items)
+def calculate_cart_totals(cart: Cart) -> Dict[str, Any]:
     return {
-        "total_items": total_items,
-        "total_price": total_price
+        "total_items": cart.total_items,
+        "total_price": cart.total_price
     }
 
-def get_user_cart(db: Session, user_id: int) -> Optional[dict]:
+def get_user_cart(db: Session, user_id: int) -> Optional[Dict[str, Any]]:
     cart = db.query(Cart).filter(Cart.user_id == user_id).first()
     if not cart:
         return None
@@ -25,7 +22,16 @@ def get_user_cart(db: Session, user_id: int) -> Optional[dict]:
     return {
         "id": cart.id,
         "user_id": cart.user_id,
-        "items": cart.items,
+        "items": [{
+            "id": item.id,
+            "product_id": item.product_id,
+            "quantity": item.quantity,
+            "product": {
+                "id": item.product.id,
+                "title": item.product.title,
+                "price": item.product.price
+            }
+        } for item in cart.items],
         **totals
     }
 
@@ -82,7 +88,7 @@ def update_cart_item(db: Session, user_id: int, item_id: int, quantity: int) -> 
     
     cart_item.quantity = quantity
     db.commit()
-    return get_user_cart(db, user_id)  # Return with calculated totals
+    return get_user_cart(db, user_id) 
 
 def remove_from_cart(db: Session, user_id: int, item_id: int) -> Optional[Cart]:
     cart = db.query(Cart).filter(Cart.user_id == user_id).first()
@@ -99,7 +105,7 @@ def remove_from_cart(db: Session, user_id: int, item_id: int) -> Optional[Cart]:
 
     db.delete(cart_item)
     db.commit()
-    return get_user_cart(db, user_id)  # Return with calculated totals
+    return get_user_cart(db, user_id)
 
 def clear_cart(db: Session, user_id: int) -> bool:
     cart = db.query(Cart).filter(Cart.user_id == user_id).first()

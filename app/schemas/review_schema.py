@@ -1,3 +1,4 @@
+from app.schemas.user_schema import UserOut
 from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
@@ -17,6 +18,17 @@ class ReviewUpdate(BaseModel):
 class Review(ReviewBase):
     id: int
     user_id: int
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
+
+class ReviewOut(BaseModel):
+    id: int
+    user: Optional[UserOut]
+    product_id: int
+    rating: float
+    comment: Optional[str]
     created_at: datetime
 
     class Config:

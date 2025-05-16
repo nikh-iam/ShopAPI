@@ -22,11 +22,11 @@ class OrderItemOut(OrderItemBase):
 class OrderBase(BaseModel):
     shipping_address: str = Field(..., max_length=200)
     payment_method: str = Field(..., max_length=50)
-    items: List[OrderItemCreate]
+    # items: List[OrderItemCreate]
 
 class OrderOut(OrderBase):
     id: int
-    user: UserOut
+    user: Optional[UserOut]
     status: str
     total_amount: float
     order_date: datetime

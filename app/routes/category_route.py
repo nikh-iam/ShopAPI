@@ -4,6 +4,7 @@ from typing import List
 
 from app.core.database import get_db
 from app.schemas.category_schema import (
+    AdminCategoryOut,
     CategoryCreate, 
     CategoryOut, 
     CategoryUpdate,
@@ -21,7 +22,7 @@ from app.models.user import User
 
 router = APIRouter(prefix="/categories", tags=["categories"])
 
-@router.get("/", response_model=List[CategoryOut])
+@router.get("/", response_model=List[AdminCategoryOut])
 def read_categories(
     skip: int = 0,
     limit: int = 100,
